@@ -1,0 +1,9 @@
+aiocache
+aiofiles
+aiosqlite
+discord.py
+psutil
+python-dotenv
+requests
+rgbprint
+sentry-sdk
