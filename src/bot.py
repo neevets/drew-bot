@@ -1,9 +1,8 @@
+import discord
+import sentry_sdk
 import os
 import logging
 import pkgutil
-
-import discord
-import sentry_sdk
 import aiohttp
 import asyncpg
 import redis
@@ -11,7 +10,6 @@ import redis
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
-from urllib.parse import urlparse
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
@@ -26,7 +24,7 @@ BETTERSTACK_HEARTBEAT = os.getenv("BETTERSTACK_HEARTBEAT")
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
-    traces_sample_rate=0.05,
+    traces_sample_rate=0.1,
 )
 
 def console_info(message: str) -> None:
@@ -59,10 +57,10 @@ class Bot(commands.AutoShardedBot):
         super().__init__(
             intents=intents,
             command_prefix=DISCORD_PREFIX,
-            owner_ids={1234903841611317251, 1263092918130966569},
+            owner_ids={1424164764858449920, 1263092918130966569},
             activity=discord.Activity(
                 type=discord.ActivityType.listening,
-                name="/help | drewbot.site",
+                name="/help | drewbot.ink",
             ),
             status=discord.Status.online,
             help_command=None,
@@ -132,21 +130,25 @@ class Bot(commands.AutoShardedBot):
             self.logger.info("Cache initialized")
 
         except Exception as e:
-            console_error("Cache initialization failed")
+            console_error("Cache initialization failed: {e}")
             self.logger.exception("Cache initialization failed")
 
     async def _load_cogs(self) -> None:
         os.makedirs("src/cogs", exist_ok=True)
 
+        console_info("------------------")
         for _, cog, _ in pkgutil.iter_modules(["src/cogs"]):
-            try:
-                await self.load_extension(f"cogs.{cog}")
-                console_info(f"Cog loaded: {cog}")
-                self.logger.info("Cog loaded: %s", cog)
+            if cog != '__pycache__':
+                try:
+                    if cog not in self.extensions:
+                        await self.load_extension(f"src.cogs.{cog}")
+                        console_info(f"Cog loaded: {cog}")
+                        self.logger.info("Cog loaded: %s", cog)
 
-            except Exception as e:
-                console_error(f"Failed to load cog: {cog}")
-                self.logger.exception("Failed to load cog: %s", cog)
+                except Exception as e:
+                    console_error(f"Failed to load cog: {cog}; {e}")
+                    self.logger.exception("Failed to load cog: %s", cog)
+        console_info("--------------------")
 
     @tasks.loop(minutes=3)
     async def heartbeat_loop(self) -> None:
