@@ -213,7 +213,7 @@ class Bot(commands.AutoShardedBot):
 def main() -> None:
     if not DISCORD_TOKEN:
         raise RuntimeError("DISCORD_TOKEN not set")
-
+    
     Bot().run(DISCORD_TOKEN)
 
 if __name__ == "__main__":

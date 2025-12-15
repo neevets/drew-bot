@@ -86,6 +86,57 @@ class General(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
+    @commands.command(name="ping", aliases=["latency", "rtt"])
+    @commands.cooldown(1, 60, commands.BucketType.user)
+    async def ping(self, ctx):
+        websocket_latency = round(self.bot.latency * 1000)
+
+        try:
+            start = time.perf_counter()
+            await self.bot.http.request(
+                discord.http.Route("GET", "/users/@me")
+            )
+            rest_latency = round((time.perf_counter() - start) * 1000)
+        except Exception:
+            rest_latency = "Error"
+
+        try:
+            start = time.perf_counter()
+            async with self.bot.http_session.get(
+                "https://api.neevets.website",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ):
+                pass
+            api_latency = round((time.perf_counter() - start) * 1000)
+        except Exception:
+            api_latency = "Error"
+
+        try:
+            start = time.perf_counter()
+            await self.bot.db.fetch("SELECT 1")
+            db_latency = round((time.perf_counter() - start) * 1000)
+        except Exception:
+            db_latency = "Error"
+
+        try:
+            start = time.perf_counter()
+            self.bot.cache.ping()
+            cache_latency = round((time.perf_counter() - start) * 1000)
+        except Exception:
+            cache_latency = "Error"
+
+        embed = discord.Embed(
+            color=0xFFFFFF
+        )
+
+        embed.add_field(name="WebSocket", value=f"{websocket_latency}ms", inline=True)
+        embed.add_field(name="REST", value=f"{rest_latency}ms", inline=True)
+        embed.add_field(name="API", value=f"{api_latency}ms", inline=True)
+        embed.add_field(name="Database", value=f"{db_latency}ms", inline=True)
+        embed.add_field(name="Cache", value=f"{cache_latency}ms", inline=True)
+
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def about(self, ctx):
         disk_usage = psutil.disk_usage('/')
