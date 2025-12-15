@@ -39,6 +39,8 @@ class General(commands.Cog):
     async def ping(self, ctx: commands.Context):
         sent = await ctx.send("Pinging…")
 
+        websocket_latency = round(self.bot.latency * 1000)
+
         now = discord.utils.utcnow()
         msg_timestamp = ctx.message.created_at
 
@@ -84,6 +86,11 @@ class General(commands.Cog):
             color=0xFFFFFF
         )
 
+        embed.add_field(
+            name="WebSocket",
+            value=f"{websocket_latency}ms",
+            inline=True
+        )
         embed.add_field(
             name="RTT",
             value=f"{rtt_latency}ms",
