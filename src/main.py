@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 import logging
 import pkgutil
@@ -7,24 +5,26 @@ import pkgutil
 import discord
 import sentry_sdk
 import aiohttp
-import aiosqlite
-import aiofiles
-import aiocache
+import asyncpg
+import redis
+
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
-from dotenv import load_dotenv
+from urllib.parse import urlparse
 from rgbprint import gradient_print, Color
+from dotenv import load_dotenv
+
+import sys
 
 load_dotenv()
 
-BETTERSTACK_HEARTBEAT = os.getenv("BETTERSTACK_HEARTBEAT")
-SENTRY_DSN = os.getenv("SENTRY_DSN")
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN", "")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_PREFIX = os.getenv("DISCORD_PREFIX", ";")
-
-if not DISCORD_TOKEN:
-    raise RuntimeError("DISCORD_TOKEN not set")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+POSTGRES_URL = os.getenv("POSTGRES_URL")
+REDIS_URL = os.getenv("REDIS_URL")
+BETTERSTACK_HEARTBEAT = os.getenv("BETTERSTACK_HEARTBEAT")
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
@@ -68,8 +68,7 @@ class Bot(commands.AutoShardedBot):
             ),
             status=discord.Status.online,
             help_command=None,
-            case_insensitive=True,
-            allowed_mentions=discord.AllowedMentions.none(),
+            case_insensitive=True
         )
 
         self.logger = logging.getLogger("drew.bot")
@@ -81,18 +80,17 @@ class Bot(commands.AutoShardedBot):
         await self._setup_logging()
         await self._setup_database()
         await self._setup_cache()
+        await self._load_cogs()
 
         self.http_session = aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=10)
         )
 
-        await self._load_cogs()
-
         if BETTERSTACK_HEARTBEAT:
             self.heartbeat_loop.start()
 
-        console_info("Bot startup completed")
-        self.logger.info("Bot startup completed")
+        console_info("Main startup completed")
+        self.logger.info("Main startup completed")
 
     async def _setup_logging(self) -> None:
         os.makedirs("src/logging", exist_ok=True)
@@ -118,14 +116,8 @@ class Bot(commands.AutoShardedBot):
         console_info("Logging initialized")
 
     async def _setup_database(self) -> None:
-        os.makedirs("src/database", exist_ok=True)
-
         try:
-            self.db = await aiosqlite.connect("src/database/bot.db")
-
-            async with aiofiles.open("src/database/schemas.sql", "r") as file:
-                await self.db.executescript(await file.read())
-                await self.db.commit()
+            self.db = await asyncpg.connect(POSTGRES_URL)
 
             console_info("Database initialized")
             self.logger.info("Database initialized")
@@ -136,7 +128,8 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_cache(self) -> None:
         try:
-            self.cache = aiocache.SimpleMemoryCache()
+            self.cache = redis.from_url(REDIS_URL)
+
             console_info("Cache initialized")
             self.logger.info("Cache initialized")
 
@@ -147,9 +140,11 @@ class Bot(commands.AutoShardedBot):
     async def _load_cogs(self) -> None:
         os.makedirs("src/cogs", exist_ok=True)
 
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
+
         for _, cog, _ in pkgutil.iter_modules(["src/cogs"]):
             try:
-                await self.load_extension(f"src.cogs.{cog}")
+                await self.load_extension(f"cogs.{cog}")
                 console_info(f"Cog loaded: {cog}")
                 self.logger.info("Cog loaded: %s", cog)
 
@@ -168,13 +163,11 @@ class Bot(commands.AutoShardedBot):
                     console_warn(f"Heartbeat failed ({response.status})")
                     self.logger.warning("Heartbeat failed (%s)", response.status)
 
-        except Exception as e:
+        except Exception:
             console_error("Heartbeat error")
             self.logger.exception("Heartbeat error")
 
     async def close(self) -> None:
-        console_info("Shutting down bot")
-
         if self.http_session:
             await self.http_session.close()
 
@@ -184,6 +177,9 @@ class Bot(commands.AutoShardedBot):
         await super().close()
 
 def main() -> None:
+    if not DISCORD_TOKEN:
+      raise RuntimeError("DISCORD_TOKEN not set in environment variable")
+
     Bot().run(DISCORD_TOKEN)
 
 if __name__ == "__main__":

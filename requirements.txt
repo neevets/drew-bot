@@ -1,4 +1,4 @@
-aiocache
+redis
 aiofiles
 aiosqlite
 discord.py
