@@ -15,8 +15,6 @@ from urllib.parse import urlparse
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
-import sys
-
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -139,8 +137,6 @@ class Bot(commands.AutoShardedBot):
 
     async def _load_cogs(self) -> None:
         os.makedirs("src/cogs", exist_ok=True)
-
-        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "src")))
 
         for _, cog, _ in pkgutil.iter_modules(["src/cogs"]):
             try:

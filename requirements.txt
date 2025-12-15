@@ -1,6 +1,5 @@
+asyncpg
 redis
-aiofiles
-aiosqlite
 discord.py
 psutil
 python-dotenv
