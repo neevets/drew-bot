@@ -34,62 +34,9 @@ class General(commands.Cog):
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    #@app_commands.guild_only()
     @app_commands.command(name="ping", description="Check the bot's latency")
     @app_commands.checks.cooldown(1, 60, key=lambda i: (i.guild.id, i.user.id))
     async def ping(self, interaction: discord.Interaction):
-        websocket_latency = round(self.bot.latency * 1000, 2)      
-
-        start_time = time.perf_counter()
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://discord.com/api/v10/users/@me', headers={'Authorization': f'Bot {self.bot.http.token}'}):
-                pass
-        end_time = time.perf_counter()
-        roundtrip_latency = round((end_time - start_time) * 1000, 2)
-
-        start_time = time.perf_counter()
-        async with aiosqlite.connect('src/database/bot.db') as database:
-            async with database.execute('SELECT 1') as cursor:
-                await cursor.fetchall()
-        end_time = time.perf_counter()
-        database_latency = round((end_time - start_time) * 1000, 2)
-        
-        start_time = time.perf_counter()
-        await self.bot.cache.set("test", "pong", ttl=5)
-        await self.bot.cache.get("test")
-        end_time = time.perf_counter()
-        cache_latency = round((end_time - start_time) * 1000, 2)
-
-        embed = discord.Embed(
-            title="Ping", 
-            color=0xFFFFFF
-        )
-        embed.add_field(
-            name='Websocket', 
-            value=f'{websocket_latency}ms', 
-            inline=False
-        )
-        embed.add_field(
-            name='Roundtrip',
-            value=f'{roundtrip_latency}ms',
-            inline=False
-        )
-        embed.add_field(
-            name='Database', 
-            value=f'{database_latency}ms', 
-            inline=False
-        )
-        embed.add_field(
-            name='Cache',
-            value=f'{cache_latency}ms', 
-            inline=False
-        )
-
-        await interaction.response.send_message(embed=embed)
-
-    @commands.command(name="ping", aliases=["latency", "rtt"])
-    @commands.cooldown(1, 60, commands.BucketType.user)
-    async def ping(self, ctx):
         websocket_latency = round(self.bot.latency * 1000)
 
         try:
@@ -136,7 +83,8 @@ class General(commands.Cog):
         embed.add_field(name="API", value=f"{api_latency}ms", inline=True)
         embed.add_field(name="Database", value=f"{db_latency}ms", inline=True)
         embed.add_field(name="Cache", value=f"{cache_latency}ms", inline=True)
-        await ctx.send(embed=embed)
+
+        await interaction.response.send_message(embed=embed)
 
     @commands.command()
     async def about(self, ctx):

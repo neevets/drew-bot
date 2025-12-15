@@ -1,12 +1,11 @@
-import discord
-import sentry_sdk
 import os
 import logging
 import pkgutil
 import aiohttp
 import asyncpg
 import redis
-
+import discord
+import sentry_sdk
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
@@ -20,7 +19,10 @@ DISCORD_PREFIX = os.getenv("DISCORD_PREFIX", ";")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 POSTGRES_URL = os.getenv("POSTGRES_URL")
 REDIS_URL = os.getenv("REDIS_URL")
-BETTERSTACK_HEARTBEAT = os.getenv("BETTERSTACK_HEARTBEAT")
+
+BETTERSTACK_BOT_HEARTBEAT = os.getenv("BETTERSTACK_BOT_HEARTBEAT")
+BETTERSTACK_DB_HEARTBEAT = os.getenv("BETTERSTACK_DB_HEARTBEAT")
+BETTERSTACK_CACHE_HEARTBEAT = os.getenv("BETTERSTACK_CACHE_HEARTBEAT")
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
@@ -28,25 +30,13 @@ sentry_sdk.init(
 )
 
 def console_info(message: str) -> None:
-    gradient_print(
-        f"[INFO] {message}",
-        start_color=Color.white,
-        end_color=Color.blue,
-    )
+    gradient_print(f"[INFO] {message}", start_color=Color.white, end_color=Color.blue)
 
 def console_warn(message: str) -> None:
-    gradient_print(
-        f"[WARNING] {message}",
-        start_color=Color.white,
-        end_color=Color.yellow,
-    )
+    gradient_print(f"[WARNING] {message}", start_color=Color.white, end_color=Color.yellow)
 
 def console_error(message: str) -> None:
-    gradient_print(
-        f"[ERROR] {message}",
-        start_color=Color.white,
-        end_color=Color.red,
-    )
+    gradient_print(f"[ERROR] {message}", start_color=Color.white, end_color=Color.red)
 
 class Bot(commands.AutoShardedBot):
     def __init__(self) -> None:
@@ -55,22 +45,22 @@ class Bot(commands.AutoShardedBot):
         intents.members = True
 
         super().__init__(
-            intents=intents,
             command_prefix=DISCORD_PREFIX,
-            owner_ids={1424164764858449920, 1263092918130966569},
+            intents=intents,
+            help_command=None,
+            case_insensitive=True,
+            owner_ids={1424164764858449920},
             activity=discord.Activity(
                 type=discord.ActivityType.listening,
                 name="/help | drewbot.ink",
             ),
             status=discord.Status.online,
-            help_command=None,
-            case_insensitive=True
         )
 
         self.logger = logging.getLogger("drew.bot")
-        self.db = None
-        self.cache = None
-        self.http_session = None
+        self.db: asyncpg.Connection | None = None
+        self.cache: redis.Redis | None = None
+        self.http_session: aiohttp.ClientSession | None = None
 
     async def setup_hook(self) -> None:
         await self._setup_logging()
@@ -82,19 +72,24 @@ class Bot(commands.AutoShardedBot):
             timeout=aiohttp.ClientTimeout(total=10)
         )
 
-        if BETTERSTACK_HEARTBEAT:
-            self.heartbeat_loop.start()
+        if BETTERSTACK_BOT_HEARTBEAT:
+            self.bot_heartbeat_loop.start()
 
-        console_info("Main startup completed")
-        self.logger.info("Main startup completed")
+        if BETTERSTACK_DB_HEARTBEAT:
+            self.db_heartbeat_loop.start()
+
+        if BETTERSTACK_CACHE_HEARTBEAT:
+            self.cache_heartbeat_loop.start()
+
+        console_info("Startup completed")
+        self.logger.info("Startup completed")
 
     async def _setup_logging(self) -> None:
         os.makedirs("src/logging", exist_ok=True)
 
-        logger = logging.getLogger("drew.bot")
-        logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.INFO)
 
-        if not logger.handlers:
+        if not self.logger.handlers:
             handler = RotatingFileHandler(
                 "src/logging/bot.log",
                 maxBytes=5 * 1024 * 1024,
@@ -106,68 +101,106 @@ class Bot(commands.AutoShardedBot):
                     "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
                 )
             )
-            logger.addHandler(handler)
+            self.logger.addHandler(handler)
 
-        self.logger = logger
         console_info("Logging initialized")
 
     async def _setup_database(self) -> None:
         try:
             self.db = await asyncpg.connect(POSTGRES_URL)
-
             console_info("Database initialized")
             self.logger.info("Database initialized")
-
-        except Exception as e:
+        except Exception:
             console_error("Database initialization failed")
             self.logger.exception("Database initialization failed")
 
     async def _setup_cache(self) -> None:
         try:
             self.cache = redis.from_url(REDIS_URL)
-
             console_info("Cache initialized")
             self.logger.info("Cache initialized")
-
-        except Exception as e:
-            console_error("Cache initialization failed: {e}")
+        except Exception:
+            console_error("Cache initialization failed")
             self.logger.exception("Cache initialization failed")
 
     async def _load_cogs(self) -> None:
         os.makedirs("src/cogs", exist_ok=True)
 
-        console_info("------------------")
         for _, cog, _ in pkgutil.iter_modules(["src/cogs"]):
-            if cog != '__pycache__':
-                try:
-                    if cog not in self.extensions:
-                        await self.load_extension(f"src.cogs.{cog}")
-                        console_info(f"Cog loaded: {cog}")
-                        self.logger.info("Cog loaded: %s", cog)
-
-                except Exception as e:
-                    console_error(f"Failed to load cog: {cog}; {e}")
-                    self.logger.exception("Failed to load cog: %s", cog)
-        console_info("--------------------")
+            if cog == "__pycache__":
+                continue
+            try:
+                await self.load_extension(f"src.cogs.{cog}")
+                console_info(f"Cog loaded: {cog}")
+                self.logger.info("Cog loaded: %s", cog)
+            except Exception:
+                console_error(f"Failed to load cog: {cog}")
+                self.logger.exception("Failed to load cog: %s", cog)
 
     @tasks.loop(minutes=3)
-    async def heartbeat_loop(self) -> None:
-        if not self.http_session or not BETTERSTACK_HEARTBEAT:
+    async def bot_heartbeat_loop(self) -> None:
+        if not self.http_session:
             return
 
         try:
-            async with self.http_session.get(BETTERSTACK_HEARTBEAT) as response:
-                if response.status != 200:
-                    console_warn(f"Heartbeat failed ({response.status})")
-                    self.logger.warning("Heartbeat failed (%s)", response.status)
-
+            async with self.http_session.get(BETTERSTACK_BOT_HEARTBEAT) as r:
+                if r.status != 200:
+                    console_warn(f"Bot heartbeat failed ({r.status})")
         except Exception:
-            console_error("Heartbeat error")
-            self.logger.exception("Heartbeat error")
+            console_error("Bot heartbeat error")
+            self.logger.exception("Bot heartbeat error")
+
+    @bot_heartbeat_loop.before_loop
+    async def before_bot_heartbeat(self) -> None:
+        await self.wait_until_ready()
+        console_info("Bot heartbeat task started")
+        self.logger.info("Bot heartbeat task started")
+
+    @tasks.loop(minutes=30)
+    async def db_heartbeat_loop(self) -> None:
+        if not self.http_session or not self.db:
+            return
+
+        try:
+            await self.db.fetch("SELECT 1")
+            async with self.http_session.get(BETTERSTACK_DB_HEARTBEAT) as r:
+                if r.status != 200:
+                    console_warn(f"DB heartbeat failed ({r.status})")
+        except Exception:
+            console_error("DB heartbeat error")
+            self.logger.exception("DB heartbeat error")
+
+    @db_heartbeat_loop.before_loop
+    async def before_db_heartbeat(self) -> None:
+        await self.wait_until_ready()
+        if self.db:
+            console_info("DB heartbeat task started")
+            self.logger.info("DB heartbeat task started")
+
+    @tasks.loop(minutes=15)
+    async def cache_heartbeat_loop(self) -> None:
+        if not self.http_session or not self.cache:
+            return
+
+        try:
+            self.cache.ping()
+            async with self.http_session.get(BETTERSTACK_CACHE_HEARTBEAT) as r:
+                if r.status != 200:
+                    console_warn(f"Cache heartbeat failed ({r.status})")
+        except Exception:
+            console_error("Cache heartbeat error")
+            self.logger.exception("Cache heartbeat error")
+
+    @cache_heartbeat_loop.before_loop
+    async def before_cache_heartbeat(self) -> None:
+        await self.wait_until_ready()
+        if self.cache:
+            console_info("Cache heartbeat task started")
+            self.logger.info("Cache heartbeat task started")
 
     async def close(self) -> None:
-        console_info("Shutting down bot...")
-        self.logger.info("Shutting down bot...")
+        console_info("Shutting down")
+        self.logger.info("Shutting down")
 
         if self.http_session:
             await self.http_session.close()
@@ -179,7 +212,7 @@ class Bot(commands.AutoShardedBot):
 
 def main() -> None:
     if not DISCORD_TOKEN:
-      raise RuntimeError("DISCORD_TOKEN not set in environment variable")
+        raise RuntimeError("DISCORD_TOKEN not set")
 
     Bot().run(DISCORD_TOKEN)
 
