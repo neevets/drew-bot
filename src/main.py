@@ -164,6 +164,9 @@ class Bot(commands.AutoShardedBot):
             self.logger.exception("Heartbeat error")
 
     async def close(self) -> None:
+        console_info("Shutting down bot...")
+        self.logger.info("Shutting down bot...")
+
         if self.http_session:
             await self.http_session.close()
 
