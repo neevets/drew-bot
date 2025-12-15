@@ -13,7 +13,7 @@ class General(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="help", description="Displays a list of available commands")
-    @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
     async def help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Commands",
@@ -35,7 +35,7 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="ping", description="Check the bot's latency")
-    @app_commands.checks.cooldown(1, 60, key=lambda i: (i.guild.id, i.user.id))
+    @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild.id, i.user.id))
     async def ping(self, interaction: discord.Interaction):
         websocket_latency = round(self.bot.latency * 1000)
 
@@ -87,7 +87,7 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @commands.command(name="ping", aliases=["latency", "rtt"])
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def ping(self, ctx):
         websocket_latency = round(self.bot.latency * 1000)
 
@@ -137,7 +137,8 @@ class General(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(name="about", aliases=["stats"])
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def about(self, ctx):
         disk_usage = psutil.disk_usage('/')
         cpu_usage = psutil.cpu_percent(interval=1)
