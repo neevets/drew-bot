@@ -36,7 +36,9 @@ class General(commands.Cog):
 
     @app_commands.command(name="ping", description="Check the bot's latency")
     @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild.id, i.user.id))
-    async def ping(self, interaction: discord.Interaction):
+    async def ping_cmd(self, interaction: discord.Interaction):
+        start = time.perf_counter()
+
         await interaction.response.send_message(
             embed=discord.Embed(
                 description="Pinging…",
@@ -44,20 +46,17 @@ class General(commands.Cog):
             )
         )
 
-        message = await interaction.original_response()
+        rtt_latency = round((time.perf_counter() - start) * 1000)
 
         websocket_latency = round(self.bot.latency * 1000)
 
-        now = discord.utils.utcnow()
-        rtt_latency = round(
-            (now - message.created_at).total_seconds() * 1000
-        )
-
         try:
             start = time.perf_counter()
-            await self.bot.http.request(
-                discord.http.Route("GET", "/users/@me")
-            )
+            async with self.bot.http_session.get(
+                "https://discord.com/api/v10/users/@me",
+                headers={"Authorization": f"Bot {self.bot.http.token}"}
+            ):
+                pass
             rest_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             rest_latency = "Error"
@@ -92,13 +91,13 @@ class General(commands.Cog):
         )
 
         embed.add_field(
-            name="WebSocket",
-            value=f"{websocket_latency}ms",
+            name="RTT",
+            value=f"{rtt_latency}ms",
             inline=True
         )
         embed.add_field(
-            name="RTT",
-            value=f"{rtt_latency}ms",
+            name="WebSocket",
+            value=f"{websocket_latency}ms",
             inline=True
         )
         embed.add_field(
@@ -127,22 +126,26 @@ class General(commands.Cog):
     @commands.command(name="ping", aliases=["latency", "rtt"])
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ping(self, ctx: commands.Context):
-        message = await ctx.send("Pinging…")
+        start = time.perf_counter()
+
+        embed = discord.Embed(
+            description="Pinging…",
+            color=0xFFFFFF
+        )
+
+        message = await ctx.send(embed=embed)
+
+        rtt_latency = round((time.perf_counter() - start) * 1000)
 
         websocket_latency = round(self.bot.latency * 1000)
 
-        now = discord.utils.utcnow()
-        msg_timestamp = ctx.message.created_at
-
-        rtt_latency = round(
-            (now - msg_timestamp).total_seconds() * 1000
-        )
-
         try:
             start = time.perf_counter()
-            await self.bot.http.request(
-                discord.http.Route("GET", "/users/@me")
-            )
+            async with self.bot.http_session.get(
+                "https://discord.com/api/v10/users/@me",
+                headers={"Authorization": f"Bot {self.bot.http.token}"}
+            ):
+                pass
             rest_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             rest_latency = "Error"
@@ -177,13 +180,13 @@ class General(commands.Cog):
         )
 
         embed.add_field(
-            name="WebSocket",
-            value=f"{websocket_latency}ms",
+            name="RTT",
+            value=f"{rtt_latency}ms",
             inline=True
         )
         embed.add_field(
-            name="RTT",
-            value=f"{rtt_latency}ms",
+            name="WebSocket",
+            value=f"{websocket_latency}ms",
             inline=True
         )
         embed.add_field(
