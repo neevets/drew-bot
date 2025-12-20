@@ -59,7 +59,7 @@ class Bot(commands.AutoShardedBot):
         )
 
         self.logger = logging.getLogger("drew.bot")
-        self.db: asyncpg.Connection | None = None
+        self.db: asyncpg.Pool | None = None
         self.cache: redis.Redis | None = None
         self.http_session: aiohttp.ClientSession | None = None
 
@@ -108,7 +108,12 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_database(self) -> None:
         try:
-            self.db = await asyncpg.connect(POSTGRES_URL)
+            self.db = await asyncpg.create_pool(
+                dsn=POSTGRES_URL,
+                min_size=1,
+                max_size=5,
+                max_inactive_connection_lifetime=300,
+            )
             console_info("Database initialized")
             self.logger.info("Database initialized")
         except Exception:
@@ -163,13 +168,15 @@ class Bot(commands.AutoShardedBot):
             return
 
         try:
-            await self.db.fetch("SELECT 1")
+            async with self.db.acquire() as conn:
+                await conn.fetch("SELECT 1")
+
             async with self.http_session.get(BETTERSTACK_DB_HEARTBEAT) as r:
                 if r.status != 200:
-                    console_warn(f"DB heartbeat failed ({r.status})")
+                    console_warn(f"Database heartbeat failed ({r.status})")
         except Exception:
-            console_error("DB heartbeat error")
-            self.logger.exception("DB heartbeat error")
+            console_error("Database heartbeat error")
+            self.logger.exception("Database heartbeat error")
 
     @db_heartbeat_loop.before_loop
     async def before_db_heartbeat(self) -> None:
@@ -200,9 +207,6 @@ class Bot(commands.AutoShardedBot):
             self.logger.info("Cache heartbeat task started")
 
     async def close(self) -> None:
-        console_info("Shutting down")
-        self.logger.info("Shutting down")
-
         if self.http_session:
             await self.http_session.close()
 

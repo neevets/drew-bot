@@ -99,7 +99,8 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            await self.bot.db.fetch("SELECT 1")
+            async with self.bot.db.acquire() as conn:
+                await conn.fetch("SELECT 1")
             db_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             db_latency = "Error"
@@ -188,7 +189,8 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            await self.bot.db.fetch("SELECT 1")
+            async with self.bot.db.acquire() as conn:
+                await conn.fetch("SELECT 1")
             db_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             db_latency = "Error"
