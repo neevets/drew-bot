@@ -58,6 +58,150 @@ class General(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @app_commands.command(name="about", description="Shows bot and system statistics")
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    async def about(self, interaction: discord.Interaction): 
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
+        cpu_percent = round(psutil.cpu_percent(interval=0.1))
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
+
+        total_guilds = len(self.bot.guilds)
+        total_users = sum(guild.member_count for guild in self.bot.guilds)
+        total_channels = sum(len(guild.channels) for guild in self.bot.guilds)
+        total_commands = len(self.bot.commands)
+
+        bot_ping = round(self.bot.latency * 1000)
+        
+        shard_id = interaction.guild.shard_id
+        total_shards = self.bot.shard_count
+
+        embed = discord.Embed(
+            title="About",
+            color=0xFFFFFF
+        )
+
+        embed.add_field(
+            name='RAM',
+            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
+            inline=True
+        )
+        embed.add_field(
+            name='CPU',
+            value=f'usage: {cpu_percent}%',
+            inline=True
+        )
+        embed.add_field(
+            name='Disk',
+            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            inline=True
+        )
+        embed.add_field(
+            name="Guilds",
+            value=total_guilds,
+            inline=True
+        )
+        embed.add_field(
+            name="Channels",
+            value=total_channels,
+            inline=True
+        )
+        embed.add_field(
+            name="Users",
+            value=total_users,
+            inline=True
+        )
+        embed.add_field(
+            name="Commands",
+            value=total_commands,
+            inline=True
+        )
+        embed.add_field(
+            name="Ping",
+            value=f'{bot_ping}ms',
+            inline=True
+        )
+        embed.add_field(
+            name="Shard",
+            value=f"{shard_id}/{total_shards}",
+            inline=True
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.command(name="about", aliases=["stats", "stat"], description="Shows bot and system statistics")
+    @commands.cooldown(1, 10, commands.BucketType.user)       
+    async def about_cmd(self, ctx):
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
+        cpu_percent = round(psutil.cpu_percent(interval=0.1))
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
+
+        total_guilds = len(self.bot.guilds)
+        total_users = sum(guild.member_count for guild in self.bot.guilds)
+        total_channels = sum(len(guild.channels) for guild in self.bot.guilds)
+        total_commands = len(self.bot.commands)
+
+        bot_ping = round(self.bot.latency * 1000)
+        
+        shard_id = ctx.guild.shard_id
+        total_shards = self.bot.shard_count
+
+        embed = discord.Embed(
+            title="About",
+            color=0xFFFFFF
+        )
+
+        embed.add_field(
+            name='RAM',
+            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
+            inline=True
+        )
+        embed.add_field(
+            name='CPU',
+            value=f'usage: {cpu_percent}%',
+            inline=True
+        )
+        embed.add_field(
+            name='Disk',
+            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            inline=True
+        )
+        embed.add_field(
+            name="Guilds",
+            value=total_guilds,
+            inline=True
+        )
+        embed.add_field(
+            name="Channels",
+            value=total_channels,
+            inline=True
+        )
+        embed.add_field(
+            name="Users",
+            value=total_users,
+            inline=True
+        )
+        embed.add_field(
+            name="Commands",
+            value=total_commands,
+            inline=True
+        )
+        embed.add_field(
+            name="Ping",
+            value=f'{bot_ping}ms',
+            inline=True
+        )
+        embed.add_field(
+            name="Shard",
+            value=f"{shard_id}/{total_shards}",
+            inline=True
+        )
+
+        await ctx.send(embed=embed)
+
     @app_commands.command(name="ping", description="Check the bot's latency")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
     async def ping(self, interaction: discord.Interaction):
@@ -113,6 +257,7 @@ class General(commands.Cog):
             cache_latency = "Error"
 
         embed = discord.Embed(
+            title="Ping",
             color=0xFFFFFF
         )
 
@@ -203,6 +348,7 @@ class General(commands.Cog):
             cache_latency = "Error"
 
         embed = discord.Embed(
+            title="Ping",
             color=0xFFFFFF
         )
 
@@ -239,79 +385,37 @@ class General(commands.Cog):
 
         await message.edit(content=None, embed=embed)
 
-    @app_commands.command(name="about", description="Shows bot and system statistics")
+    @app_commands.command(name="invite", description="Get the bot link")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
-    async def about(self, interaction: discord.Interaction):
-        python_version = sys.version.split(' ')[0]
-        discord_version = discord.__version__
+    async def invite(self, interaction: discord.Interaction):
+        bot_invitation = f'https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&integration_type=0&scope=bot+applications.commands'
         
-        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
-        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
-        cpu_percent = round(psutil.cpu_percent(interval=0.1))
-        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
-        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
-
         embed = discord.Embed(
+            title="Invite",
             color=0xFFFFFF
         )
 
         embed.add_field(
-            name='Version',
-            value=f'python: {python_version}\ndiscord: {discord_version}',
-            inline=False
-        )
-        embed.add_field(
-            name='RAM',
-            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
-            inline=False
-        )
-        embed.add_field(
-            name='CPU',
-            value=f'usage: {cpu_percent}%',
-            inline=False
-        )
-        embed.add_field(
-            name='Disk',
-            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            name='Bot',
+            value=f'[invitation]({bot_invitation})', 
             inline=False
         )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @commands.command(name="about", aliases=["stats", "stat"], description="Shows bot and system statistics")
-    @commands.cooldown(1, 10, commands.BucketType.user)       
-    async def about_cmd(self, ctx):
-        python_version = sys.version.split(' ')[0]
-        discord_version = discord.__version__
+    @commands.command(name='invite', description="Get the bot link", aliases=['inv'])
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def invite_cmd(self, ctx):
+        bot_invitation = f'https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&integration_type=0&scope=bot+applications.commands'
         
-        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
-        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
-        cpu_percent = round(psutil.cpu_percent(interval=0.1))
-        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
-        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
-
         embed = discord.Embed(
+            title="Invite",
             color=0xFFFFFF
         )
 
         embed.add_field(
-            name='Version',
-            value=f'python: {python_version}\ndiscord: {discord_version}',
-            inline=False
-        )
-        embed.add_field(
-            name='RAM',
-            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
-            inline=False
-        )
-        embed.add_field(
-            name='CPU',
-            value=f'usage: {cpu_percent}%',
-            inline=False
-        )
-        embed.add_field(
-            name='Disk',
-            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            name='Bot',
+            value=f'[invitation]({bot_invitation})', 
             inline=False
         )
 

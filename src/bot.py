@@ -60,7 +60,7 @@ class Bot(commands.AutoShardedBot):
 
         self.logger = logging.getLogger("drew.bot")
         self.db: asyncpg.Pool | None = None
-        self.cache: redis.Redis | None = None
+        self.cache: Redis | None = None
         self.http_session: aiohttp.ClientSession | None = None
 
     async def setup_hook(self) -> None:
@@ -77,7 +77,7 @@ class Bot(commands.AutoShardedBot):
             self.bot_heartbeat_loop.start()
 
         if BETTERSTACK_DB_HEARTBEAT:
-            self.db_heartbeat_loop.start()
+            self.database_heartbeat_loop.start()
 
         if BETTERSTACK_CACHE_HEARTBEAT:
             self.cache_heartbeat_loop.start()
@@ -163,7 +163,7 @@ class Bot(commands.AutoShardedBot):
         self.logger.info("Bot heartbeat task started")
 
     @tasks.loop(minutes=3)
-    async def db_heartbeat_loop(self) -> None:
+    async def database_heartbeat_loop(self) -> None:
         if not self.http_session or not self.db:
             return
 
@@ -178,14 +178,14 @@ class Bot(commands.AutoShardedBot):
             console_error("Database heartbeat error")
             self.logger.exception("Database heartbeat error")
 
-    @db_heartbeat_loop.before_loop
-    async def before_db_heartbeat(self) -> None:
+    @database_heartbeat_loop.before_loop
+    async def before_database_heartbeat(self) -> None:
         await self.wait_until_ready()
         if self.db:
             console_info("Database heartbeat task started")
             self.logger.info("Database heartbeat task started")
 
-    @tasks.loop(minutes=3)
+    @tasks.loop(minutes=1)
     async def cache_heartbeat_loop(self) -> None:
         if not self.http_session or not self.cache:
             return
