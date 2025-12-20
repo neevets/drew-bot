@@ -243,11 +243,11 @@ class General(commands.Cog):
         python_version = sys.version.split(' ')[0]
         discord_version = discord.__version__
         
-        ram_total = round(psutil.virtual_memory().total / (1024 ** 3), 2)
-        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3), 2)
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
         cpu_percent = round(psutil.cpu_percent(interval=0.1))
-        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3), 2)
-        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3), 2)
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
 
         embed = discord.Embed(
             color=0xFFFFFF
@@ -282,11 +282,11 @@ class General(commands.Cog):
         python_version = sys.version.split(' ')[0]
         discord_version = discord.__version__
         
-        ram_total = round(psutil.virtual_memory().total / (1024 ** 3), 2)
-        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3), 2)
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
         cpu_percent = round(psutil.cpu_percent(interval=0.1))
-        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3), 2)
-        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3), 2)
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3))
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3))
 
         embed = discord.Embed(
             color=0xFFFFFF
