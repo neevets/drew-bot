@@ -13,7 +13,7 @@ class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @app_commands.command(name="help", description="Displays a list of available commands")
+    @app_commands.command(name="help", description="Displays a list of available slash commands")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
     async def help(self, interaction: discord.Interaction):
         embed = discord.Embed(
@@ -34,6 +34,30 @@ class General(commands.Cog):
         )
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.command(name="help", description="Displays a list of available prefix commands")
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def help_cmd(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title="Commands",
+            description="Here's a list of all available prefix commands:",
+            color=0xFFFFFF
+        )
+
+        for command in self.bot.commands:
+            if not command.hidden:
+                description = command.description
+                embed.add_field(
+                    name=f"{ctx.prefix}{command.name}",
+                    value=description,
+                    inline=False
+                )
+
+        embed.set_footer(
+            text="Use each command as shown, or type `help [command]` for more details."
+        )
+
+        await ctx.send(embed=embed, delete_after=120)
 
     @app_commands.command(name="ping", description="Check the bot's latency")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
@@ -125,9 +149,9 @@ class General(commands.Cog):
 
         await interaction.edit_original_response(embed=embed)
 
-    @commands.command(name="ping", aliases=["latency", "rtt"])
+    @commands.command(name="ping", aliases=["latency", "rtt"], description="Check the bot's latency")
     @commands.cooldown(1, 10, commands.BucketType.user)
-    async def ping_prefix(self, ctx: commands.Context):
+    async def ping_cmd(self, ctx: commands.Context):
         start = time.perf_counter()
 
         embed = discord.Embed(
@@ -253,7 +277,7 @@ class General(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @commands.command(name="about", aliases=["stats", "stat"])
+    @commands.command(name="about", aliases=["stats", "stat"], description="Shows bot and system statistics")
     @commands.cooldown(1, 10, commands.BucketType.user)       
     async def about_cmd(self, ctx):
         python_version = sys.version.split(' ')[0]
