@@ -1,3 +1,4 @@
+import sys
 import aiohttp
 import discord
 from discord import app_commands
@@ -9,11 +10,11 @@ import time
 import psutil
 
 class General(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @app_commands.command(name="help", description="Displays a list of available commands")
-    @app_commands.checks.cooldown(1, 5, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
     async def help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Commands",
@@ -35,15 +36,16 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="ping", description="Check the bot's latency")
-    @app_commands.checks.cooldown(1, 5, key=lambda i: (i.guild.id, i.user.id))
-    async def ping_cmd(self, interaction: discord.Interaction):
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    async def ping(self, interaction: discord.Interaction):
         start = time.perf_counter()
 
         await interaction.response.send_message(
             embed=discord.Embed(
                 description="Pinging…",
                 color=0xFFFFFF
-            )
+            ),
+            ephemeral=True
         )
 
         rtt_latency = round((time.perf_counter() - start) * 1000)
@@ -124,8 +126,8 @@ class General(commands.Cog):
         await interaction.edit_original_response(embed=embed)
 
     @commands.command(name="ping", aliases=["latency", "rtt"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def ping(self, ctx: commands.Context):
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def ping_prefix(self, ctx: commands.Context):
         start = time.perf_counter()
 
         embed = discord.Embed(
@@ -210,20 +212,85 @@ class General(commands.Cog):
             inline=True
         )
 
-        await message.edit(content=None, embed=embed)
+        await message.edit(content=None, embed=embed, delete_after=120)
 
-    @commands.command(name="about", aliases=["stats"])
-    @commands.cooldown(1, 5, commands.BucketType.user)
-    async def about(self, ctx):
-        disk_usage = psutil.disk_usage('/')
-        cpu_usage = psutil.cpu_percent(interval=1)
-        ram_usage = psutil.virtual_memory().percent
+    @app_commands.command(name="about", description="Shows bot and system statistics")
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    async def about(self, interaction: discord.Interaction):
+        python_version = sys.version.split(' ')[0]
+        discord_version = discord.__version__
+        
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3), 2)
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3), 2)
+        cpu_percent = round(psutil.cpu_percent(interval=0.1))
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3), 2)
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3), 2)
 
-        await ctx.send(
-            f"Disk Usage: {disk_usage.percent}%\n"
-            f"CPU Usage: {cpu_usage}%\n"
-            f"RAM Usage: {ram_usage}%"
+        embed = discord.Embed(
+            color=0xFFFFFF
         )
+
+        embed.add_field(
+            name='Version',
+            value=f'python: {python_version}\ndiscord: {discord_version}',
+            inline=False
+        )
+        embed.add_field(
+            name='RAM',
+            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
+            inline=False
+        )
+        embed.add_field(
+            name='CPU',
+            value=f'usage: {cpu_percent}%',
+            inline=False
+        )
+        embed.add_field(
+            name='Disk',
+            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            inline=False
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.command(name="about", aliases=["stats", "stat"])
+    @commands.cooldown(1, 10, commands.BucketType.user)       
+    async def about_cmd(self, ctx):
+        python_version = sys.version.split(' ')[0]
+        discord_version = discord.__version__
+        
+        ram_total = round(psutil.virtual_memory().total / (1024 ** 3), 2)
+        ram_usage = round(psutil.virtual_memory().used / (1024 ** 3), 2)
+        cpu_percent = round(psutil.cpu_percent(interval=0.1))
+        disk_total = round(psutil.disk_usage('/').total / (1024 ** 3), 2)
+        disk_usage = round(psutil.disk_usage('/').used / (1024 ** 3), 2)
+
+        embed = discord.Embed(
+            color=0xFFFFFF
+        )
+
+        embed.add_field(
+            name='Version',
+            value=f'python: {python_version}\ndiscord: {discord_version}',
+            inline=False
+        )
+        embed.add_field(
+            name='RAM',
+            value=f'total: {ram_total} GB\nusage: {ram_usage} GB',
+            inline=False
+        )
+        embed.add_field(
+            name='CPU',
+            value=f'usage: {cpu_percent}%',
+            inline=False
+        )
+        embed.add_field(
+            name='Disk',
+            value=f'total: {disk_total} GB\nusage: {disk_usage} GB',
+            inline=False
+        )
+
+        await ctx.send(embed=embed, delete_after=120)
 
 async def setup(bot):
     await bot.add_cog(General(bot))

@@ -174,8 +174,8 @@ class Bot(commands.AutoShardedBot):
     async def before_db_heartbeat(self) -> None:
         await self.wait_until_ready()
         if self.db:
-            console_info("DB heartbeat task started")
-            self.logger.info("DB heartbeat task started")
+            console_info("Database heartbeat task started")
+            self.logger.info("Database heartbeat task started")
 
     @tasks.loop(minutes=15)
     async def cache_heartbeat_loop(self) -> None:
