@@ -162,7 +162,7 @@ class Bot(commands.AutoShardedBot):
         console_info("Bot heartbeat task started")
         self.logger.info("Bot heartbeat task started")
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes=3)
     async def db_heartbeat_loop(self) -> None:
         if not self.http_session or not self.db:
             return
@@ -185,7 +185,7 @@ class Bot(commands.AutoShardedBot):
             console_info("Database heartbeat task started")
             self.logger.info("Database heartbeat task started")
 
-    @tasks.loop(minutes=15)
+    @tasks.loop(minutes=3)
     async def cache_heartbeat_loop(self) -> None:
         if not self.http_session or not self.cache:
             return
