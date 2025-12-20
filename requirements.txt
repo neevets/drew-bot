@@ -1,5 +1,5 @@
 asyncpg
-redis
+upstash_redis
 discord.py
 psutil
 python-dotenv

@@ -1,13 +1,12 @@
 import sys
+import psutil
+import time
 import aiohttp
+import asyncpg
 import discord
 from discord import app_commands
 from discord.ext import commands
-
-import asyncpg
-import redis
-import time
-import psutil
+from upstash_redis import Redis
 
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -57,7 +56,7 @@ class General(commands.Cog):
             text="Use each command as shown, or type `help [command]` for more details."
         )
 
-        await ctx.send(embed=embed, delete_after=120)
+        await ctx.send(embed=embed)
 
     @app_commands.command(name="ping", description="Check the bot's latency")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
@@ -236,7 +235,7 @@ class General(commands.Cog):
             inline=True
         )
 
-        await message.edit(content=None, embed=embed, delete_after=120)
+        await message.edit(content=None, embed=embed)
 
     @app_commands.command(name="about", description="Shows bot and system statistics")
     @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
@@ -314,7 +313,7 @@ class General(commands.Cog):
             inline=False
         )
 
-        await ctx.send(embed=embed, delete_after=120)
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(General(bot))

@@ -3,12 +3,12 @@ import logging
 import pkgutil
 import aiohttp
 import asyncpg
-import redis
 import discord
 import sentry_sdk
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
+from upstash_redis import Redis
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
@@ -19,6 +19,7 @@ DISCORD_PREFIX = os.getenv("DISCORD_PREFIX", ";")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 POSTGRES_URL = os.getenv("POSTGRES_URL")
 REDIS_URL = os.getenv("REDIS_URL")
+REDIS_TOKEN = os.getenv("REDIS_TOKEN")
 
 BETTERSTACK_BOT_HEARTBEAT = os.getenv("BETTERSTACK_BOT_HEARTBEAT")
 BETTERSTACK_DB_HEARTBEAT = os.getenv("BETTERSTACK_DB_HEARTBEAT")
@@ -116,7 +117,7 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_cache(self) -> None:
         try:
-            self.cache = redis.from_url(REDIS_URL)
+            self.cache = Redis(url=REDIS_URL, token=REDIS_TOKEN)
             console_info("Cache initialized")
             self.logger.info("Cache initialized")
         except Exception:
