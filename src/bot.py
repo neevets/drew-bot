@@ -3,7 +3,7 @@ import logging
 import pkgutil
 import aiohttp
 import asyncpg
-import valkey.asyncio as valkey
+import redis
 import discord
 import sentry_sdk
 
@@ -123,12 +123,11 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_cache(self) -> None:
         try:
-            # self.cache = Redis.from_url(
-            #     url=REDIS_URL,
-            #     token=REDIS_TOKEN,
-            # )
-            valkey_uri = 'valkeys://default:AVNS_9_ZWgfs_y4JYsOcXE5d@valkey-20df2dec-neevetspaypal-cae8.k.aivencloud.com:18570'
-            self.cache = valkey.from_url(valkey_uri)
+            self.cache = redis.from_url(
+                url="redis://redis-16108.c10.us-east-1-4.ec2.cloud.redislabs.com:16108", 
+                password="dSZTvPbL6DRPdFBewOp1E8jnbRi9H7iM",
+                decode_responses=True
+            )
             console_info("Cache initialized")
             self.logger.info("Cache initialized")
         except Exception:
@@ -197,7 +196,7 @@ class Bot(commands.AutoShardedBot):
             return
 
         try:
-            await self.cache.ping()
+            self.cache.ping()
             async with self.http_session.get(BETTERSTACK_CACHE_HEARTBEAT) as r:
                 if r.status != 200:
                     console_warn(f"Cache heartbeat failed ({r.status})")
@@ -221,7 +220,7 @@ class Bot(commands.AutoShardedBot):
             await self.db.close()
 
         if self.cache:
-            await self.cache.close()
+            self.cache.close()
 
         if sentry_sdk.is_initialized():
             sentry_sdk.flush(timeout=2)

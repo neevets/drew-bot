@@ -249,7 +249,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            await self.bot.cache.ping()
+            self.bot.cache.ping()
             cache_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             cache_latency = "Error"
@@ -340,7 +340,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            await self.bot.cache.ping()
+            self.bot.cache.ping()
             cache_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             cache_latency = "Error"
