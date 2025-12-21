@@ -1,3 +1,4 @@
+import os
 import sentry_sdk
 import discord
 from discord import app_commands
@@ -113,6 +114,26 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         gradient_print(f"Connected to gateway as {self.bot.user.name}#{self.bot.user.discriminator} ({self.bot.user.id})", start_color=Color.white, end_color=Color.blue)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author == self.bot.user:
+            return
+        
+        if self.bot.user in message.mentions:
+            try:
+                command = message.content[len(message.mentions[0].mention):].strip()
+
+                if command:
+                    content = f"{os.getenv('DISCORD_PREFIX')}{command}"
+                    ctx = await self.bot.get_context(message)
+                    ctx.message.content = content
+
+                    await self.bot.invoke(ctx)  
+            except Exception:
+                pass
+        
+        await self.bot.process_commands(message)
 
 async def setup(bot):
     await bot.add_cog(Events(bot))

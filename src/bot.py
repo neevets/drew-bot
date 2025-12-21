@@ -212,7 +212,7 @@ class Bot(commands.AutoShardedBot):
         if self.db is not None:
             self.client.close()
 
-        if self.cache is not None:
+        if self.cache:
             self.cache.close()
     
         if sentry_sdk.is_initialized():
