@@ -3,12 +3,13 @@ import logging
 import pkgutil
 import aiohttp
 import asyncpg
+import valkey.asyncio as valkey
 import discord
 import sentry_sdk
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
-from upstash_redis.asyncio import Redis
+# from upstash_redis import Redis
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
@@ -122,7 +123,12 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_cache(self) -> None:
         try:
-            self.cache = Redis(url=REDIS_URL, token=REDIS_TOKEN)
+            # self.cache = Redis.from_url(
+            #     url=REDIS_URL,
+            #     token=REDIS_TOKEN,
+            # )
+            valkey_uri = 'valkeys://default:AVNS_9_ZWgfs_y4JYsOcXE5d@valkey-20df2dec-neevetspaypal-cae8.k.aivencloud.com:18570'
+            self.cache = valkey.from_url(valkey_uri)
             console_info("Cache initialized")
             self.logger.info("Cache initialized")
         except Exception:
