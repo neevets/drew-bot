@@ -8,7 +8,7 @@ class Autopost(commands.Cog):
 
     @app_commands.command(name="autopfp-start", description="...")
     @app_commands.describe(channel="...")
-    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 15, key=lambda i: i.user.id)
     async def autopfp_start(self, interaction: discord.Interaction, channel: discord.TextChannel = None):
         
         embed = discord.Embed(

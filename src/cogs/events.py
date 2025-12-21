@@ -5,57 +5,111 @@ from discord.ext import commands
 from upstash_redis import Redis
 from rgbprint import gradient_print, Color
 
-ANTI_DEBOUNCE_SECONDS = 10
+ANTI_DEBOUNCE_SECONDS = 15
 
 class Events(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
-        self.cache: Redis = bot.cache
 
     async def cooldown_message(self, user_id, command_name) -> bool:
         key = f"cooldown:{user_id}:{command_name}"
-        exists = self.cache.get(key)
+        exists = self.bot.cache.get(key)
         if exists:
             return False
-        self.cache.set(key, "1", ex=ANTI_DEBOUNCE_SECONDS)
+        self.bot.cache.set(key, "1", ex=ANTI_DEBOUNCE_SECONDS)
         return True
-    
+
     @commands.Cog.listener()
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
         if isinstance(error, app_commands.CommandOnCooldown):
+            if await self.cooldown_message(interaction.user.id, interaction.command.name):
+                embed = discord.Embed(
+                    title='Cooldown',
+                    description=f'You must wait `{round(error.retry_after)}` seconds before using this command again.',
+                    color=0xFFFFFF
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+        elif isinstance(error, app_commands.CommandError):
             embed = discord.Embed(
-                title='Cooldown',
-                description=f'You must wait `{round(error.retry_after)}` seconds before using this command again.',
+                title="Error",
+                description=f'{error}',
                 color=0xFFFFFF
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        #elif isinstance(error, app_commands.CommandError):
-            #sentry_sdk.capture_exception(error)
-            #raise error
-
+            await interaction.author.send(embed=embed)
+            sentry_sdk.capture_exception(error)
+            raise error
         else:
             sentry_sdk.capture_exception(error)
             raise error
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        if isinstance(error, commands.CommandOnCooldown):
-            if await self.cooldown_message(ctx.author.id, ctx.command.name):
+        try:
+            if isinstance(error, commands.CommandNotFound):
                 embed = discord.Embed(
-                    title="Cooldown",
-                    description=f"You must wait `{round(error.retry_after)}` seconds before using this command again.",
+                    title="Search",
+                    description=f"The command `{ctx.invoked_with}` was not found. Use `{self.bot.command_prefix}help` to see all commands",
                     color=0xFFFFFF
                 )
                 await ctx.send(embed=embed, delete_after=30)
-
-        elif isinstance(error, commands.CommandError):
-            sentry_sdk.capture_exception(error)
-            raise error
-
-        else:
-            sentry_sdk.capture_exception(error)
-            raise error
+            elif isinstance(error, commands.CommandOnCooldown):
+                if await self.cooldown_message(ctx.author.id, ctx.command.name):
+                    embed = discord.Embed(
+                        title="Cooldown",
+                        description=f"You must wait `{round(error.retry_after)}` seconds before using this command again.",
+                        color=0xFFFFFF
+                    )
+                    await ctx.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.MissingRequiredArgument):
+                embed = discord.Embed(
+                    title="Arguments",
+                    description=f"Argument `{error.param.name}` is missing to execute the command.",
+                    color=0xFFFFFF
+                )
+                await ctx.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.NoPrivateMessage):
+                embed = discord.Embed(
+                    title="Guild",
+                    description="This command can only be used in `guild` messages.",
+                    color=0xFFFFFF
+                )
+                await ctx.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.PrivateMessageOnly):
+                embed = discord.Embed(
+                    title="DM",
+                    description="This command can only be used in `DM` messages.",
+                    color=0xFFFFFF
+                )
+                await ctx.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.BotMissingPermissions):
+                embed = discord.Embed(
+                    title="Permissions",
+                    description=f"I don't have the permission `{error.missing_permissions}` to process the command.",
+                    color=0xFFFFFF
+                )
+                await ctx.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.NotOwner):
+                embed = discord.Embed(
+                    title="Restricted",
+                    description="You `aren't` the owner of me.",
+                    color=0xFFFFFF
+                )
+                await ctx.author.send(embed=embed, delete_after=30)
+            elif isinstance(error, commands.CommandError):
+                embed = discord.Embed(
+                    title="Error",
+                    description=f'{error}',
+                    color=0xFFFFFF
+                )
+                await ctx.author.send(embed=embed)
+                sentry_sdk.capture_exception(error)
+                raise error
+            else:
+                sentry_sdk.capture_exception(error)
+                raise error
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            raise e
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:

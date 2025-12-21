@@ -13,7 +13,7 @@ class General(commands.Cog):
         self.bot = bot
 
     @app_commands.command(name="help", description="Displays a list of available slash commands")
-    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 15, key=lambda i: i.user.id)
     async def help(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="Commands",
@@ -35,7 +35,7 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.command(name="help", description="Displays a list of available prefix commands")
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def help_cmd(self, ctx: commands.Context):
         embed = discord.Embed(
             title="Commands",
@@ -59,7 +59,7 @@ class General(commands.Cog):
         await ctx.send(embed=embed)
 
     @app_commands.command(name="about", description="Shows bot and system statistics")
-    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 15, key=lambda i: i.user.id)
     async def about(self, interaction: discord.Interaction): 
         ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
         ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
@@ -131,7 +131,7 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.command(name="about", aliases=["stats", "stat"], description="Shows bot and system statistics")
-    @commands.cooldown(1, 10, commands.BucketType.user)       
+    @commands.cooldown(1, 15, commands.BucketType.user)       
     async def about_cmd(self, ctx):
         ram_total = round(psutil.virtual_memory().total / (1024 ** 3))
         ram_usage = round(psutil.virtual_memory().used / (1024 ** 3))
@@ -203,7 +203,7 @@ class General(commands.Cog):
         await ctx.send(embed=embed)
 
     @app_commands.command(name="ping", description="Check the bot's latency")
-    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 15, key=lambda i: i.user.id)
     async def ping(self, interaction: discord.Interaction):
         start = time.perf_counter()
 
@@ -295,7 +295,7 @@ class General(commands.Cog):
         await interaction.edit_original_response(embed=embed)
 
     @commands.command(name="ping", aliases=["latency", "rtt"], description="Check the bot's latency")
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def ping_cmd(self, ctx: commands.Context):
         start = time.perf_counter()
 
@@ -386,7 +386,7 @@ class General(commands.Cog):
         await message.edit(content=None, embed=embed)
 
     @app_commands.command(name="invite", description="Get the bot link")
-    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    @app_commands.checks.cooldown(1, 15, key=lambda i: i.user.id)
     async def invite(self, interaction: discord.Interaction):
         bot_invitation = f'https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&integration_type=0&scope=bot+applications.commands'
         
@@ -404,7 +404,7 @@ class General(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.command(name='invite', description="Get the bot link", aliases=['inv'])
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def invite_cmd(self, ctx):
         bot_invitation = f'https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions=8&integration_type=0&scope=bot+applications.commands'
         
