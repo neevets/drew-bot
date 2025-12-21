@@ -206,12 +206,19 @@ class Bot(commands.AutoShardedBot):
             console_info("Cache heartbeat task started")
             self.logger.info("Cache heartbeat task started")
 
+
     async def close(self) -> None:
         if self.http_session:
             await self.http_session.close()
 
         if self.db:
             await self.db.close()
+
+        if self.cache:
+            self.cache.close()
+
+        if sentry_sdk.is_initialized():
+            sentry_sdk.flush(timeout=2)
 
         await super().close()
 
