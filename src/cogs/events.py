@@ -12,10 +12,10 @@ class Events(commands.Cog):
 
     async def cooldown_message(self, user_id, command_name) -> bool:
         key = f"cooldown:{user_id}:{command_name}"
-        exists = self.bot.cache.get(key)
+        exists = await self.bot.cache.get(key)
         if exists:
             return False
-        self.bot.cache.set(key, "1", ex=ANTI_DEBOUNCE_SECONDS)
+        await self.bot.cache.set(key, "1", ex=ANTI_DEBOUNCE_SECONDS)
         return True
 
     @commands.Cog.listener()
