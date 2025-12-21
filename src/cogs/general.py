@@ -1,7 +1,6 @@
 import psutil
 import time
 import aiohttp
-import asyncpg
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -241,8 +240,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            async with self.bot.db.acquire() as conn:
-                await conn.fetch("SELECT 1")
+            await self.bot.db.command('ping')
             db_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             db_latency = "Error"
@@ -332,8 +330,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            async with self.bot.db.acquire() as conn:
-                await conn.fetch("SELECT 1")
+            await self.bot.db.command('ping')
             db_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             db_latency = "Error"

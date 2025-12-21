@@ -2,14 +2,13 @@ import os
 import logging
 import pkgutil
 import aiohttp
-import asyncpg
+import motor.motor_asyncio
 import redis
 import discord
 import sentry_sdk
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
-# from upstash_redis import Redis
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
@@ -18,9 +17,8 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_PREFIX = os.getenv("DISCORD_PREFIX", ";")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
-POSTGRES_URL = os.getenv("POSTGRES_URL")
+MONGODB_URL = os.getenv("MONGODB_URL")
 REDIS_URL = os.getenv("REDIS_URL")
-REDIS_TOKEN = os.getenv("REDIS_TOKEN")
 
 BETTERSTACK_BOT_HEARTBEAT = os.getenv("BETTERSTACK_BOT_HEARTBEAT")
 BETTERSTACK_DB_HEARTBEAT = os.getenv("BETTERSTACK_DB_HEARTBEAT")
@@ -60,8 +58,7 @@ class Bot(commands.AutoShardedBot):
         )
 
         self.logger = logging.getLogger("drew.bot")
-        self.db: asyncpg.Pool | None = None
-        self.cache: Redis | None = None
+        self.db: motor.motor_asyncio.AsyncIOMotorClient | None = None
         self.http_session: aiohttp.ClientSession | None = None
 
     async def setup_hook(self) -> None:
@@ -109,12 +106,8 @@ class Bot(commands.AutoShardedBot):
 
     async def _setup_database(self) -> None:
         try:
-            self.db = await asyncpg.create_pool(
-                dsn=POSTGRES_URL,
-                min_size=1,
-                max_size=5,
-                max_inactive_connection_lifetime=300,
-            )
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
+            self.db = self.client.get_database("db")
             console_info("Database initialized")
             self.logger.info("Database initialized")
         except Exception:
@@ -173,8 +166,7 @@ class Bot(commands.AutoShardedBot):
             return
 
         try:
-            async with self.db.acquire() as conn:
-                await conn.fetch("SELECT 1")
+            await self.db.command('ping')
 
             async with self.http_session.get(BETTERSTACK_DB_HEARTBEAT) as r:
                 if r.status != 200:
@@ -216,12 +208,9 @@ class Bot(commands.AutoShardedBot):
         if self.http_session:
             await self.http_session.close()
 
-        if self.db:
-            await self.db.close()
-
-        if self.cache:
+        if self.cache is not None:
             self.cache.close()
-
+    
         if sentry_sdk.is_initialized():
             sentry_sdk.flush(timeout=2)
 
