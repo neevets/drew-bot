@@ -19,6 +19,7 @@ DISCORD_PREFIX = os.getenv("DISCORD_PREFIX", ";")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 MONGODB_URL = os.getenv("MONGODB_URL")
 REDIS_URL = os.getenv("REDIS_URL")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 
 BETTERSTACK_BOT_HEARTBEAT = os.getenv("BETTERSTACK_BOT_HEARTBEAT")
 BETTERSTACK_DB_HEARTBEAT = os.getenv("BETTERSTACK_DB_HEARTBEAT")
@@ -117,8 +118,8 @@ class Bot(commands.AutoShardedBot):
     async def _setup_cache(self) -> None:
         try:
             self.cache = redis.from_url(
-                url="redis://redis-16108.c10.us-east-1-4.ec2.cloud.redislabs.com:16108", 
-                password="dSZTvPbL6DRPdFBewOp1E8jnbRi9H7iM",
+                url=REDIS_URL, 
+                password=REDIS_PASSWORD,
                 decode_responses=True
             )
             console_info("Cache initialized")
@@ -160,9 +161,9 @@ class Bot(commands.AutoShardedBot):
         console_info("Bot heartbeat task started")
         self.logger.info("Bot heartbeat task started")
 
-    @tasks.loop(minutes=3)
+    @tasks.loop(minutes=5)
     async def database_heartbeat_loop(self) -> None:
-        if not self.http_session or not self.db:
+        if not self.http_session or self.db is None:
             return
 
         try:
@@ -178,7 +179,7 @@ class Bot(commands.AutoShardedBot):
     @database_heartbeat_loop.before_loop
     async def before_database_heartbeat(self) -> None:
         await self.wait_until_ready()
-        if self.db:
+        if self.db is not None:
             console_info("Database heartbeat task started")
             self.logger.info("Database heartbeat task started")
 
@@ -207,6 +208,9 @@ class Bot(commands.AutoShardedBot):
     async def close(self) -> None:
         if self.http_session:
             await self.http_session.close()
+
+        if self.db is not None:
+            self.client.close()
 
         if self.cache is not None:
             self.cache.close()

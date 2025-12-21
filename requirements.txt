@@ -1,5 +1,4 @@
 motor
-asyncpg
 redis
 discord.py
 psutil
