@@ -1,5 +1,5 @@
 asyncpg
-valkey
+redis
 upstash_redis
 discord.py
 psutil
