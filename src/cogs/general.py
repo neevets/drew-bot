@@ -1,4 +1,3 @@
-import sys
 import psutil
 import time
 import aiohttp
@@ -6,7 +5,6 @@ import asyncpg
 import discord
 from discord import app_commands
 from discord.ext import commands
-from upstash_redis import Redis
 
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -251,7 +249,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            self.bot.cache.ping()
+            await self.bot.cache.ping()
             cache_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             cache_latency = "Error"
@@ -342,7 +340,7 @@ class General(commands.Cog):
 
         try:
             start = time.perf_counter()
-            self.bot.cache.ping()
+            await self.bot.cache.ping()
             cache_latency = round((time.perf_counter() - start) * 1000)
         except Exception:
             cache_latency = "Error"

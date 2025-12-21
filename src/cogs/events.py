@@ -2,7 +2,6 @@ import sentry_sdk
 import discord
 from discord import app_commands
 from discord.ext import commands
-from upstash_redis import Redis
 from rgbprint import gradient_print, Color
 
 ANTI_DEBOUNCE_SECONDS = 15

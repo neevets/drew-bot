@@ -8,7 +8,7 @@ import sentry_sdk
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
-from upstash_redis import Redis
+from upstash_redis.asyncio import Redis
 from rgbprint import gradient_print, Color
 from dotenv import load_dotenv
 
@@ -191,7 +191,7 @@ class Bot(commands.AutoShardedBot):
             return
 
         try:
-            self.cache.ping()
+            await self.cache.ping()
             async with self.http_session.get(BETTERSTACK_CACHE_HEARTBEAT) as r:
                 if r.status != 200:
                     console_warn(f"Cache heartbeat failed ({r.status})")
@@ -215,7 +215,7 @@ class Bot(commands.AutoShardedBot):
             await self.db.close()
 
         if self.cache:
-            self.cache.close()
+            await self.cache.close()
 
         if sentry_sdk.is_initialized():
             sentry_sdk.flush(timeout=2)
