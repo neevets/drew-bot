@@ -29,7 +29,7 @@ Drew is an all-in-one Discord bot focused on **security, automoderation, and vis
 ## Project Architecture
 
 * **Language:** Python
-* **Database:** PostgreSQL
+* **Database:** MongoDB
 * **Cache:** Redis
 * **API:** TypeScript
 ---
