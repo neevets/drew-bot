@@ -34,3 +34,6 @@ src/database/*.db
 Thumbs.db
 
 *.pid
+
+src/a.py
+src/asd.py

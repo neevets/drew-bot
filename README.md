@@ -1,6 +1,6 @@
-# Drew Bot
+# Drew
 
-Drew is an all-in-one Discord bot focused on **security, automoderation, and visual content**. It is designed to provide **advanced raid protection**, efficient moderation tools, and entertainment features, especially aimed at **profiles and image-based content**.
+Drew is an all-in-one Discord bot focused on **avanced security**.
 
 ---
 
@@ -12,12 +12,7 @@ Drew is an all-in-one Discord bot focused on **security, automoderation, and vis
 
 ### Content & Entertainment
 
-* Image autoposting:
 
-  * Avatars
-  * Banners
-  * Gangster style
-  * Kawaii style
 
 ### Premium System
 
@@ -66,21 +61,13 @@ BETTERSTACK_HEARTBEAT=""
 
 1. Invite the bot to your server
 2. Grant the required permissions
-3. Use the web panel or commands to configure security and autoposting
+3. Use the web dashboard or commands to configure security
 
 Example:
 
 ```text
 /drew setup
 ```
-
----
-
-## Target Audience
-
-* Regular Discord servers
-* Communities focused on profiles and images
-* Servers that need strong security without complexity
 
 ---
 

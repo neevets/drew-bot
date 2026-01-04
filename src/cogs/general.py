@@ -5,6 +5,13 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+def format_uptime(seconds: int) -> str:
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+
+    return f"{days}d {hours}h {minutes}m {seconds}s"
+
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -26,7 +33,7 @@ class General(commands.Cog):
                     inline=False
                 )
         embed.set_footer(
-            text="Use each command as shown, or type `help [command]` for more details."
+            text="Use each command as shown, or type help [command] for more details."
         )
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -50,7 +57,7 @@ class General(commands.Cog):
                 )
 
         embed.set_footer(
-            text="Use each command as shown, or type `help [command]` for more details."
+            text="Use each command as shown, or type help [command] for more details."
         )
 
         await ctx.send(embed=embed)
@@ -74,6 +81,8 @@ class General(commands.Cog):
         shard_id = interaction.guild.shard_id
         total_shards = self.bot.shard_count
 
+        uptime = format_uptime(int(time.time() - self.bot.start_time))
+
         embed = discord.Embed(
             title="About",
             color=0xFFFFFF
@@ -123,6 +132,9 @@ class General(commands.Cog):
             name="Shard",
             value=f"{shard_id}/{total_shards}",
             inline=True
+        )
+        embed.set_footer(
+            text=f"uptime: {uptime}"
         )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -146,6 +158,8 @@ class General(commands.Cog):
         shard_id = ctx.guild.shard_id
         total_shards = self.bot.shard_count
 
+        uptime = format_uptime(int(time.time() - self.bot.start_time))
+
         embed = discord.Embed(
             title="About",
             color=0xFFFFFF
@@ -195,6 +209,9 @@ class General(commands.Cog):
             name="Shard",
             value=f"{shard_id}/{total_shards}",
             inline=True
+        )
+        embed.set_footer(
+            text=f"uptime: {uptime}"
         )
 
         await ctx.send(embed=embed)

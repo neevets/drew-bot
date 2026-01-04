@@ -84,7 +84,7 @@ class Events(commands.Cog):
             elif isinstance(error, commands.BotMissingPermissions):
                 embed = discord.Embed(
                     title="Permissions",
-                    description=f"I don't have the permission `{error.missing_permissions}` to process the command.",
+                    description=f"I don't have the permission(s) `{error.missing_permissions}` to process the command.",
                     color=0xFFFFFF
                 )
                 await ctx.send(embed=embed, delete_after=30)
@@ -94,14 +94,14 @@ class Events(commands.Cog):
                     description="You `aren't` the owner of me.",
                     color=0xFFFFFF
                 )
-                await ctx.author.send(embed=embed, delete_after=30)
+                await ctx.send(embed=embed, delete_after=30)
             elif isinstance(error, commands.CommandError):
                 embed = discord.Embed(
                     title="Error",
                     description=f'{error}',
                     color=0xFFFFFF
                 )
-                await ctx.author.send(embed=embed)
+                await ctx.send(embed=embed)
                 sentry_sdk.capture_exception(error)
                 raise error
             else:
@@ -114,26 +114,6 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         gradient_print(f"Connected to gateway as {self.bot.user.name}#{self.bot.user.discriminator} ({self.bot.user.id})", start_color=Color.white, end_color=Color.blue)
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message) -> None:
-        if message.author == self.bot.user:
-            return
-        
-        if self.bot.user in message.mentions:
-            try:
-                command = message.content[len(message.mentions[0].mention):].strip()
-
-                if command:
-                    content = f"{os.getenv('DISCORD_PREFIX')}{command}"
-                    ctx = await self.bot.get_context(message)
-                    ctx.message.content = content
-
-                    await self.bot.invoke(ctx)  
-            except Exception:
-                pass
-        
-        await self.bot.process_commands(message)
 
 async def setup(bot):
     await bot.add_cog(Events(bot))

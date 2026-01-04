@@ -6,6 +6,7 @@ import motor.motor_asyncio
 import redis
 import discord
 import sentry_sdk
+import time
 
 from discord.ext import commands, tasks
 from logging.handlers import RotatingFileHandler
@@ -58,6 +59,7 @@ class Bot(commands.AutoShardedBot):
             status=discord.Status.online,
         )
 
+        self.start_time: float = time.time()
         self.logger = logging.getLogger("drew.bot")
         self.db: motor.motor_asyncio.AsyncIOMotorClient | None = None
         self.http_session: aiohttp.ClientSession | None = None
@@ -141,6 +143,25 @@ class Bot(commands.AutoShardedBot):
             except Exception:
                 console_error(f"Failed to load cog: {cog}")
                 self.logger.exception("Failed to load cog: %s", cog)
+
+    async def on_message(self, message: discord.Message) -> None:
+        if message.author == self.user:
+            return
+        
+        if self.user in message.mentions:
+            try:
+                command = message.content[len(message.mentions[0].mention):].strip()
+
+                if command:
+                    content = f"{os.getenv('DISCORD_PREFIX')}{command}"
+                    ctx = await self.get_context(message)
+                    ctx.message.content = content
+
+                    await self.invoke(ctx)  
+            except Exception:
+                pass
+        
+        await self.process_commands(message)
 
     @tasks.loop(minutes=3)
     async def bot_heartbeat_loop(self) -> None:
